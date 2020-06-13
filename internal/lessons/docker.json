@@ -1,0 +1,32 @@
+[
+  {
+    "Id": 1,
+    "Title": "LESSON 1.1: TESTING YOUR DOCKER VERSION",
+    "Exercise": "Run docker --version to check the version of Docker installed on your machine.",
+    "Answer": "docker --version",
+    "Complete": false,
+    "AutoClean": false,
+    "Resources": {
+      "Images": [],
+      "Containers": [],
+      "Volumes": [],
+      "Networks": []
+    },
+    "DependsOn": []
+  },
+  {
+    "Id": 2,
+    "Title": "LESSON 1.2: TEST DOCKER INSTALLATION",
+    "Exercise": "Test that your installation works by running the hello-world Docker image. Run docker run hello-world.",
+    "Answer": "docker run hello-world",
+    "Complete": false,
+    "AutoClean": false,
+    "Resources": {
+      "Images": [],
+      "Containers": [],
+      "Volumes": [],
+      "Networks": []
+    },
+    "DependsOn": []
+  }
+]

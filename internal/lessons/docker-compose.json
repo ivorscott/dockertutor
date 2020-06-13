@@ -1,0 +1,35 @@
+[
+  {
+    "Id": 1,
+    "Title": "LESSON 1.1: TESTING YOUR DOCKER COMPOSE VERSION",
+    "Exercise": "Run docker --version to check the version of Docker installed on your machine.",
+    "Answer": "docker --version",
+    "Explanation": "",
+    "Complete": false,
+    "AutoClean": false,
+    "Resources": {
+      "Images": [],
+      "Containers": [],
+      "Volumes": [],
+      "Networks": []
+    },
+    "DependsOn": []
+  },
+  {
+    "Id": 2,
+    "Title": "LESSON 1.2: RUN DOCKER COMPOSE UP ",
+    "Exercise": "Using Compose is basically a three-step process:\nDefine your app’s environment with a Dockerfile so it can be reproduced anywhere.\nDefine the services that make up your app in docker-compose.yml so they can be run together in an isolated environment.\nRun docker-compose up and Compose starts and runs your entire app.\nImagine in your project directory you have the following Dockerfile and the docker-compose.yml file: {{placeholder}} {{placeholder}} \nStart up your application by running docker-compose up",
+    "Examples": ["L2-compose.Dockerfile", "L2-compose.yml"],
+    "Answer": "docker-compose up",
+    "Explanation": "Compose pulls a Redis image, builds an image for your code, and starts the services you defined. In this case, the code is statically copied into the image at build time.",
+    "Complete": false,
+    "AutoClean": false,
+    "Resources": {
+      "Images": [],
+      "Containers": [],
+      "Volumes": [],
+      "Networks": []
+    },
+    "DependsOn": []
+  }
+]
