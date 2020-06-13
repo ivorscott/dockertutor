@@ -4,31 +4,32 @@ type ActiveLesson int
 type ActiveCategory string
 
 // Categories represents category of lessons
-type Categories []string{"docker","docker-compose","swarm"}
+var Categories = [3]string{"docker", "docker-compose", "swarm"}
 
 // Lesson represents the state of an exercise
 type Lesson struct {
-	Id int
-	Title string
-	Exercise string
-	Answer string
+	Id          int
+	Title       string
+	Exercise    string
+	Answer      string
+	Examples    []string
 	Explanation string
-	Complete bool
-	AutoClean bool
-	DependsOn []Lesson
+	Complete    bool
+	AutoClean   bool
+	DependsOn   []Lesson
 	Resources
 }
 
 type Lessons []Lesson
 
-// Resources aim to perserve the state of a lesson in the event of 
+// Resources aim to perserve the state of a lesson in the event of
 // exiting the program and starting back up again. Direct resources
-// and the resources of dependent lessons 
+// and the resources of dependent lessons
 type Resources struct {
-	Images []string
+	Images     []string
 	Containers []string
-	Volumes	[]string
-	Networks []string
+	Volumes    []string
+	Networks   []string
 }
 
 // Next fetches the next lesson
