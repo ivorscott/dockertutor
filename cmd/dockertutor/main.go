@@ -5,7 +5,7 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/ivorscott/dockertutor/internal/lessons"
+	"github.com/ivorscott/dockertutor/lessons"
 )
 
 func main() {
