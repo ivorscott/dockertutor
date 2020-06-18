@@ -16,7 +16,6 @@ type Lesson struct {
 	Explanation string
 	Complete    bool
 	AutoClean   bool
-	DependsOn   []Lesson
 	Resources
 }
 
@@ -31,6 +30,10 @@ type Resources struct {
 	Volumes    []string
 	Networks   []string
 }
+
+func (l *Lesson) Setup() {}
+
+func (l *Lesson) Teardown() {}
 
 // Next fetches the next lesson
 func (l *Lesson) Next() {}
