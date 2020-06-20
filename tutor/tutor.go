@@ -10,9 +10,9 @@ import (
 
 // Tutorial manages active tutorial state
 type Tutorial struct {
-	Category     string
+	Category       string
 	ActiveLessonId int
-	ActiveLesson Lesson
+	ActiveLesson   Lesson
 	Lessons
 }
 
@@ -44,14 +44,14 @@ type Resources struct {
 }
 
 var IntroMap = map[string]string{
-	"docker":        DockerIntro,
-	"swarm":         SwarmIntro,
+	"docker":         DockerIntro,
+	"swarm":          SwarmIntro,
 	"docker-compose": ComposeIntro,
 }
 
 var CatMap = map[string]int{
-	"docker":        0,
-	"swarm":         2,
+	"docker":         0,
+	"swarm":          2,
 	"docker-compose": 1,
 }
 
@@ -63,7 +63,6 @@ var ErrFileNotRead = errors.New("config file could not be read")
 // NewTutorial returns a new tutorial by category
 func NewTutorial(category string) (*Tutorial, error) {
 	t := &Tutorials{}
-
 	file, err := ioutil.ReadFile(config)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -89,13 +88,11 @@ func NewTutorial(category string) (*Tutorial, error) {
 	cat := CatMap[category]
 	al := *l
 
-
-
 	return &Tutorial{
-		Category:     category,
+		Category:       category,
 		ActiveLessonId: tuts[cat].ActiveLessonId,
-		ActiveLesson: al[tuts[cat].ActiveLessonId],
-		Lessons:      *l,
+		ActiveLesson:   al[tuts[cat].ActiveLessonId],
+		Lessons:        *l,
 	}, nil
 }
 
