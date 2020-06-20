@@ -1,4 +1,4 @@
-package lessons
+package tutor
 
 const DockerIntro string = `
 ===============================================================================

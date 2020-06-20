@@ -2,17 +2,17 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 
-	"github.com/ivorscott/dockertutor/lessons"
+	"github.com/ivorscott/dockertutor/tutor"
 )
+
+var categories = [3]string{"docker", "docker-compose", "swarm"}
 
 func main() {
 	if err := run(); err != nil {
@@ -27,26 +27,19 @@ func prompt(stdin io.Reader) (string, error) {
 }
 
 func run() error {
-
-	tut := flag.String("c", lessons.Categories[0], "Select tutorial category")
+	cat := flag.String("c", categories[0], "Select tutorial category")
 	flag.Parse()
 
-	ll := &lessons.Lessons{}
-	filename := fmt.Sprintf("lessons/%s.%s", *tut, "json")
-
-	file, err := ioutil.ReadFile(filename)
+	t, err := tutor.NewTutorial(*cat)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
 		return err
 	}
-	if len(file) == 0 {
-		return nil
+
+	if t.ActiveLessonId == 0 {
+		t.Welcome()
 	}
 
-	json.Unmarshal(file, ll)
-	fmt.Printf("%v", ll)
+	t.ActiveLesson.Explain()
 
 	cmd, err := prompt(os.Stdin)
 	if err != nil {

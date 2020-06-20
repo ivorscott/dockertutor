@@ -5,7 +5,6 @@
     "Exercise": "Run docker --version to check the version of Docker installed on your machine.",
     "Answer": "docker --version",
     "Complete": false,
-    "AutoClean": false,
     "Resources": {
       "Images": [],
       "Containers": [],
@@ -19,7 +18,6 @@
     "Exercise": "Test that your installation works by running the hello-world Docker image. Run docker run hello-world.",
     "Answer": "docker run hello-world",
     "Complete": false,
-    "AutoClean": false,
     "Resources": {
       "Images": [],
       "Containers": [],

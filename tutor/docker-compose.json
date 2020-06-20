@@ -6,7 +6,6 @@
     "Answer": "docker-compose --version",
     "Explanation": "",
     "Complete": false,
-    "AutoClean": false,
     "Resources": {
       "Images": [],
       "Containers": [],
@@ -23,7 +22,6 @@
     "Answer": "docker-compose up",
     "Explanation": "Compose pulls a Redis image, builds an image for your code, and starts the services you defined. In this case, the code is statically copied into the image at build time.",
     "Complete": false,
-    "AutoClean": false,
     "Resources": {
       "Images": [],
       "Containers": [],
