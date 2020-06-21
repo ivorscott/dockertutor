@@ -1,6 +1,7 @@
 package tutor
 
-const DockerIntro string = `
+func DockerIntro() string {
+	return `
 ===============================================================================
                         Welcome to the Docker CLI Tutor
 ===============================================================================
@@ -13,6 +14,7 @@ you can deliver software quickly.
 The approximate time required to complete the tutor is 25-30 minutes, depending
 upon how much time is spent with experimentation.
 `
+}
 
 const ComposeIntro string = `
 ===============================================================================
