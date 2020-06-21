@@ -1,6 +1,6 @@
 package tutor
 
-func DockerIntro() string {
+func dockerIntro() string {
 	return `
 ===============================================================================
                         Welcome to the Docker CLI Tutor
@@ -16,7 +16,8 @@ upon how much time is spent with experimentation.
 `
 }
 
-const ComposeIntro string = `
+func composeIntro() string {
+	return `
 ===============================================================================
                     Welcome to the Docker Compose Tutor
 ===============================================================================
@@ -30,8 +31,10 @@ configuration.
 The approximate time required to complete the tutor is 25-30 minutes, depending
 upon how much time is spent with experimentation.
 `
+}
 
-const SwarmIntro string = `
+func swarmIntro() string {
+	return `
 ===============================================================================
                     Welcome to the Docker Swarm mode Tutor 
 ===============================================================================
@@ -46,3 +49,4 @@ Docker hosts participating in the swarm, as well as swarm services.
 The approximate time required to complete the tutor is 25-30 minutes, depending
 upon how much time is spent with experimentation.
 `
+}

@@ -1,10 +1,9 @@
+// Tutor provides state management for tutorials and their lessons
 package tutor
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 )
 
@@ -43,49 +42,35 @@ type Resources struct {
 	Networks   []string
 }
 
+var Categories = [3]string{"docker", "docker-compose", "swarm"}
+
 var IntroMap = map[string]string{
-	"docker":         DockerIntro,
-	"swarm":          SwarmIntro,
-	"docker-compose": ComposeIntro,
+	Categories[0]: dockerIntro(),
+	Categories[1]: composeIntro(),
+	Categories[2]: swarmIntro(),
 }
 
-var CatMap = map[string]int{
-	"docker":         0,
-	"swarm":          2,
-	"docker-compose": 1,
+var catMap = map[string]int{
+	Categories[0]: 0,
+	Categories[1]: 2,
+	Categories[2]: 1,
 }
-
-const config = "tutor/tutorials.json"
-
-var ErrFileEmpty = errors.New("config file is empty")
-var ErrFileNotRead = errors.New("config file could not be read")
 
 // NewTutorial returns a new tutorial by category
-func NewTutorial(category string) (*Tutorial, error) {
+func NewTutorial(tutsData, lessData []byte, category string) (*Tutorial, error) {
 	t := &Tutorials{}
-	file, err := ioutil.ReadFile(config)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, os.ErrNotExist
-		}
-		return nil, ErrFileNotRead
-	}
 
-	if len(file) == 0 {
-		return nil, ErrFileEmpty
-	}
-
-	if err := json.Unmarshal(file, t); err != nil {
+	if err := json.Unmarshal(tutsData, t); err != nil {
 		return nil, err
 	}
 
-	l, err := NewLessons(category)
+	l, err := NewLessons(lessData)
 	if err != nil {
 		return nil, err
 	}
 
 	tuts := *t
-	cat := CatMap[category]
+	cat := catMap[category]
 	al := *l
 
 	return &Tutorial{
@@ -96,22 +81,10 @@ func NewTutorial(category string) (*Tutorial, error) {
 	}, nil
 }
 
-func NewLessons(category string) (*Lessons, error) {
+func NewLessons(lessData []byte) (*Lessons, error) {
 	l := &Lessons{}
-	lSrc := fmt.Sprintf("tutor/%s.json", category)
-	file, err := ioutil.ReadFile(lSrc)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, os.ErrNotExist
-		}
-		return nil, ErrFileNotRead
-	}
 
-	if len(file) == 0 {
-		return nil, ErrFileEmpty
-	}
-
-	if err := json.Unmarshal(file, l); err != nil {
+	if err := json.Unmarshal(lessData, l); err != nil {
 		return nil, err
 	}
 

@@ -5,14 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 
 	"github.com/ivorscott/dockertutor/tutor"
 )
-
-var categories = [3]string{"docker", "docker-compose", "swarm"}
 
 func main() {
 	if err := run(); err != nil {
@@ -27,10 +26,23 @@ func prompt(stdin io.Reader) (string, error) {
 }
 
 func run() error {
-	cat := flag.String("c", categories[0], "Select tutorial category")
+	cat := flag.String("c", tutor.Categories[0], "Select tutorial category")
 	flag.Parse()
 
-	t, err := tutor.NewTutorial(*cat)
+	tutsConf := "./tutor/tutorials.json"
+	lessConf := fmt.Sprintf("./tutor/%s.json", *cat)
+
+	tutsData, err := ioutil.ReadFile(tutsConf)
+	if err != nil {
+		return err
+	}
+
+	lessData, err := ioutil.ReadFile(lessConf)
+	if err != nil {
+		return err
+	}
+
+	t, err := tutor.NewTutorial(tutsData, lessData, *cat)
 	if err != nil {
 		return err
 	}
