@@ -106,12 +106,14 @@ func (l *Lesson) Setup() {}
 func (l *Lesson) Teardown() {}
 
 // Teach returns a lesson exercise
-func (l *Lesson) Teach() {}
-
-// Explain returns a lesson explanation
-func (l *Lesson) Explain() {
+func (l *Lesson) Teach() {
+	fmt.Fprintln(os.Stdout, l.Title)
+	fmt.Fprintln(os.Stdout, lbreak())
 	fmt.Fprintln(os.Stdout, l.Exercise)
 }
+
+// Explain returns a lesson explanation
+func (l *Lesson) Explain() {}
 
 // Success represents a lesson succeeded
 func (l *Lesson) Success() {}

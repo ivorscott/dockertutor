@@ -20,7 +20,7 @@ func main() {
 }
 
 func prompt(stdin io.Reader) (string, error) {
-	fmt.Print("> ")
+	fmt.Print("\n> ")
 	reader := bufio.NewReader(stdin)
 	return reader.ReadString('\n')
 }
@@ -51,7 +51,7 @@ func run() error {
 		t.Welcome()
 	}
 
-	t.ActiveLesson.Explain()
+	t.ActiveLesson.Teach()
 
 	cmd, err := prompt(os.Stdin)
 	if err != nil {
