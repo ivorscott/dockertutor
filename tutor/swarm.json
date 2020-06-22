@@ -2,8 +2,8 @@
   {
     "Id": 1,
     "Title": "LESSON 1.1: ENABLE SWARM MODE",
-    "Exercise": "Run docker swarm --init to enable Docker swarm mode on your machine.",
-    "Answer": "docker swarm --init",
+    "Exercise": "Run docker swarm init to enable Docker swarm mode on your machine.",
+    "Answer": "docker swarm init",
     "Explanation": "",
     "Complete": false,
     "Resources": {

@@ -56,8 +56,8 @@ var IntroMap = map[string]string{
 
 var catMap = map[string]int{
 	Categories[0]: 0,
-	Categories[1]: 2,
-	Categories[2]: 1,
+	Categories[1]: 1,
+	Categories[2]: 2,
 }
 
 func Prompt(stdin io.Reader) (string, error) {
