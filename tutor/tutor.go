@@ -91,6 +91,7 @@ func NewTutorial(tutsData, lessData []byte, category string) (*Tutorial, error) 
 	}, nil
 }
 
+// New Lessons provides the lessons state for the tutorial
 func NewLessons(lessData []byte) (*Lessons, error) {
 	l := &Lessons{}
 
@@ -135,6 +136,7 @@ func (t *Tutorial) NextLesson() {
 	}
 
 }
+
 // CheckAnswer splits the command on a newline and checks the answer
 func (t *Tutorial) CheckAnswer(cmd string) bool {
 	answer := bytes.Split([]byte(cmd), []byte("\n"))
