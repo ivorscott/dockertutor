@@ -11,8 +11,7 @@
       "Containers": [],
       "Volumes": [],
       "Networks": []
-    },
-    "DependsOn": []
+    }
   },
   {
     "Id": 2,
@@ -27,7 +26,6 @@
       "Containers": [],
       "Volumes": [],
       "Networks": []
-    },
-    "DependsOn": []
+    }
   }
 ]
