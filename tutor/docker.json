@@ -2,8 +2,8 @@
   {
     "Id": 1,
     "Title": "LESSON 1.1: TESTING YOUR DOCKER VERSION",
-    "Exercise": "Run docker --version to check the version of Docker installed on your machine.",
-    "Answer": "docker --version",
+    "Exercise": "Run docker version to check the version of Docker installed on your machine.",
+    "Answer": "docker version",
     "Explanation": "",
     "Complete": false,
     "Resources": {

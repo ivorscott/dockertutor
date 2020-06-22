@@ -167,15 +167,27 @@ func (l *Lesson) Explain() {
 
 // Success represents a lesson succeeded
 func (t *Tutorial) Success() {
+	fmt.Println()
 	fmt.Fprintln(os.Stdout, "Correct!")
 	fmt.Println()
-	t.ActiveLesson = t.Lessons[t.ActiveLessonId+1]
+
+	lessLen := len(t.Lessons)
+
+	if 	t.ActiveLessonId == lessLen - 1 {
+		cat := catMap[t.Category]
+		capitalize := bytes.Title([]byte(Categories[cat]))
+		msg := fmt.Sprintf("%s Tutorial Complete!", capitalize)
+		fmt.Fprintln(os.Stdout, msg)
+		return
+	}
+	t.ActiveLesson = t.Lessons[t.ActiveLessonId + 1]
 	t.ActiveLessonId = t.ActiveLessonId + 1
 	t.NextLesson()
 }
 
 // Failure represents a lesson failed
 func (t *Tutorial) Failure() {
+	fmt.Println()
 	fmt.Fprintln(os.Stdout, "Command was not correct.")
 	fmt.Println()
 }
