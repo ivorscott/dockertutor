@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -15,8 +16,9 @@ import (
 type Tutorial struct {
 	Category       string
 	ActiveLessonId int
-	ActiveLesson   Lesson
-	Lessons
+	ActiveLesson   Lesson `json:"-"`
+	Tutorials      `json:"-"`
+	Lessons        `json:"-"`
 }
 
 type Tutorials []Tutorial
@@ -30,6 +32,8 @@ type Lesson struct {
 	Examples    []string
 	Explanation string
 	Complete    bool
+	Setup       []string
+	Teardown    []string
 	Resources
 }
 
@@ -60,10 +64,16 @@ var catMap = map[string]int{
 	Categories[2]: 2,
 }
 
-func Prompt(stdin io.Reader) (string, error) {
+func prompt(stdin io.Reader) (string, error) {
 	fmt.Print("\n> ")
 	reader := bufio.NewReader(stdin)
 	return reader.ReadString('\n')
+}
+
+func ConfigFiles(category string) (string, string) {
+	tutsConfig := "./tutor/tutorials.json"
+	lessonConfig := fmt.Sprintf("./tutor/%s.json", category)
+	return tutsConfig, lessonConfig
 }
 
 // NewTutorial returns a new tutorial by category
@@ -87,6 +97,7 @@ func NewTutorial(tutsData, lessData []byte, category string) (*Tutorial, error) 
 		Category:       category,
 		ActiveLessonId: tuts[cat].ActiveLessonId,
 		ActiveLesson:   al[tuts[cat].ActiveLessonId],
+		Tutorials:      tuts,
 		Lessons:        *l,
 	}, nil
 }
@@ -109,17 +120,27 @@ func (t *Tutorial) Welcome() {
 
 // Next fetches the next lesson
 func (t *Tutorial) NextLesson() {
+	if cmd := t.ActiveLesson.teardown(); cmd != nil {
+		cmd.Start()
+		cmd.Wait()
+	}
+
+	if cmd := t.ActiveLesson.setup(); cmd != nil {
+		cmd.Start()
+		cmd.Wait()
+	}
+
 	var answer = false
 
 	for answer == false {
-		t.ActiveLesson.Teach()
+		t.ActiveLesson.teach()
 
-		cmd, err := Prompt(os.Stdin)
+		cmd, err := prompt(os.Stdin)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s", err.Error())
 		}
 
-		answer = t.CheckAnswer(cmd)
+		answer = t.checkAnswer(cmd)
 
 		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
@@ -128,17 +149,17 @@ func (t *Tutorial) NextLesson() {
 		fmt.Printf("%s", out)
 
 		if answer {
-			t.Success()
+			t.success()
 			return
 		} else {
-			t.Failure()
+			t.failure()
 		}
 	}
 
 }
 
 // CheckAnswer splits the command on a newline and checks the answer
-func (t *Tutorial) CheckAnswer(cmd string) bool {
+func (t *Tutorial) checkAnswer(cmd string) bool {
 	answer := bytes.Split([]byte(cmd), []byte("\n"))
 
 	if bytes.Equal(answer[0], []byte(t.ActiveLesson.Answer)) {
@@ -148,52 +169,92 @@ func (t *Tutorial) CheckAnswer(cmd string) bool {
 }
 
 // Setup provisions lesson resources
-func (l *Lesson) Setup() {}
+func (l *Lesson) setup() *exec.Cmd {
+	if len(l.Setup) > 0 {
+		for _, cmd := range l.Setup {
+			return exec.Command("/bin/sh", "-c", cmd)
+		}
+	}
+	return nil
+}
 
 // Teardown tears down lesson resources
-func (l *Lesson) Teardown() {}
+func (l *Lesson) teardown() *exec.Cmd {
+	if len(l.Teardown) > 0 {
+		for _, cmd := range l.Teardown {
+			return exec.Command("/bin/sh", "-c", cmd)
+		}
+	}
+	return nil
+}
 
 // Teach returns a lesson exercise
-func (l *Lesson) Teach() {
+func (l *Lesson) teach() {
 	fmt.Fprintln(os.Stdout, l.Title)
 	fmt.Fprintln(os.Stdout, lbreak())
 	fmt.Fprintln(os.Stdout, l.Exercise)
 }
 
 // Explain returns a lesson explanation
-func (l *Lesson) Explain() {
+func (l *Lesson) explain() {
 	fmt.Fprintln(os.Stdout, l.Explanation)
 }
 
+// Failure represents a lesson failed
+func (t *Tutorial) failure() {
+	fmt.Println()
+	fmt.Fprintln(os.Stdout, "Command was not correct.")
+	fmt.Println()
+}
+
 // Success represents a lesson succeeded
-func (t *Tutorial) Success() {
+func (t *Tutorial) success() {
 	fmt.Println()
 	fmt.Fprintln(os.Stdout, "Correct!")
 	fmt.Println()
 
 	lessLen := len(t.Lessons)
 
-	if 	t.ActiveLessonId == lessLen - 1 {
+	if t.ActiveLessonId == lessLen-1 {
+		t.reset()
 		cat := catMap[t.Category]
 		capitalize := bytes.Title([]byte(Categories[cat]))
 		msg := fmt.Sprintf("%s Tutorial Complete!", capitalize)
 		fmt.Fprintln(os.Stdout, msg)
 		return
 	}
-	t.ActiveLesson = t.Lessons[t.ActiveLessonId + 1]
+	t.ActiveLesson = t.Lessons[t.ActiveLessonId+1]
 	t.ActiveLessonId = t.ActiveLessonId + 1
+	t.save()
+	// Write to Tutorial Json
 	t.NextLesson()
 }
 
-// Failure represents a lesson failed
-func (t *Tutorial) Failure() {
-	fmt.Println()
-	fmt.Fprintln(os.Stdout, "Command was not correct.")
-	fmt.Println()
+func (t *Tutorial) save() {
+	tuts := t.Tutorials
+	cat := catMap[t.Category]
+	tuts[cat].ActiveLessonId = t.ActiveLessonId
+
+	json, err := json.Marshal(tuts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err.Error())
+	}
+
+	tutsConfig, _ := ConfigFiles(t.Category)
+	ioutil.WriteFile(tutsConfig, json, 0644)
 }
 
-// Exit quits the lesson
-func (l *Lesson) Exit() {}
-
 // Reset resources and lesson progress
-func (l *Lesson) Reset() {}
+func (t *Tutorial) reset() {
+	tuts := t.Tutorials
+	cat := catMap[t.Category]
+	tuts[cat].ActiveLessonId = 0
+
+	json, err := json.Marshal(tuts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err.Error())
+	}
+
+	tutsConfig, _ := ConfigFiles(t.Category)
+	ioutil.WriteFile(tutsConfig, json, 0644)
+}

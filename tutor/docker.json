@@ -11,7 +11,9 @@
       "Containers": [],
       "Volumes": [],
       "Networks": []
-    }
+    },
+    "Setup": [],
+    "Teardown": []
   },
   {
     "Id": 2,
@@ -25,6 +27,8 @@
       "Containers": [],
       "Volumes": [],
       "Networks": []
-    }
+    },
+    "Setup": [],
+    "Teardown": []
   }
 ]

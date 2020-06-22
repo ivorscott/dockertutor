@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/ivorscott/dockertutor/tutor"
 	"io/ioutil"
 	"log"
@@ -18,15 +17,14 @@ func run() error {
 	cat := flag.String("c", tutor.Categories[0], "Select tutorial category")
 	flag.Parse()
 
-	tutsConf := "./tutor/tutorials.json"
-	lessConf := fmt.Sprintf("./tutor/%s.json", *cat)
+	tutsConfig, lessonConfig := tutor.ConfigFiles(*cat)
 
-	tutsData, err := ioutil.ReadFile(tutsConf)
+	tutsData, err := ioutil.ReadFile(tutsConfig)
 	if err != nil {
 		return err
 	}
 
-	lessData, err := ioutil.ReadFile(lessConf)
+	lessData, err := ioutil.ReadFile(lessonConfig)
 	if err != nil {
 		return err
 	}

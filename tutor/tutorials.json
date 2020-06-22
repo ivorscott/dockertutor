@@ -1,14 +1,1 @@
-[
-  {
-    "Category": "docker",
-    "ActiveLessonId": 0
-  },
-  {
-    "Category": "docker-compose",
-    "ActiveLessonId": 0
-  },
-  {
-    "Category": "swarm",
-    "ActiveLessonId": 0
-  }
-]
+[{"Category":"docker","ActiveLessonId":0},{"Category":"docker-compose","ActiveLessonId":1},{"Category":"swarm","ActiveLessonId":0}]

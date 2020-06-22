@@ -20,7 +20,7 @@ func TestPrompt(t *testing.T) {
 	want := "docker run hello-world"
 	reader := bufio.NewReader(strings.NewReader(want))
 
-	got, err := Prompt(reader)
+	got, err := prompt(reader)
 	if err != io.EOF {
 		t.Errorf("Prompt failed and sent: %s", err)
 	}
