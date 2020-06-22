@@ -2,9 +2,13 @@
 package tutor
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 )
 
 // Tutorial manages active tutorial state
@@ -56,6 +60,12 @@ var catMap = map[string]int{
 	Categories[2]: 1,
 }
 
+func Prompt(stdin io.Reader) (string, error) {
+	fmt.Print("\n> ")
+	reader := bufio.NewReader(stdin)
+	return reader.ReadString('\n')
+}
+
 // NewTutorial returns a new tutorial by category
 func NewTutorial(tutsData, lessData []byte, category string) (*Tutorial, error) {
 	t := &Tutorials{}
@@ -97,7 +107,43 @@ func (t *Tutorial) Welcome() {
 }
 
 // Next fetches the next lesson
-func (t *Tutorial) Next() {}
+func (t *Tutorial) NextLesson() {
+	var answer = false
+
+	for answer == false {
+		t.ActiveLesson.Teach()
+
+		cmd, err := Prompt(os.Stdin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s", err.Error())
+		}
+
+		answer = t.CheckAnswer(cmd)
+
+		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s", err.Error())
+		}
+		fmt.Printf("%s", out)
+
+		if answer {
+			t.Success()
+			return
+		} else {
+			t.Failure()
+		}
+	}
+
+}
+// CheckAnswer splits the command on a newline and checks the answer
+func (t *Tutorial) CheckAnswer(cmd string) bool {
+	answer := bytes.Split([]byte(cmd), []byte("\n"))
+
+	if bytes.Equal(answer[0], []byte(t.ActiveLesson.Answer)) {
+		return true
+	}
+	return false
+}
 
 // Setup provisions lesson resources
 func (l *Lesson) Setup() {}
@@ -113,13 +159,24 @@ func (l *Lesson) Teach() {
 }
 
 // Explain returns a lesson explanation
-func (l *Lesson) Explain() {}
+func (l *Lesson) Explain() {
+	fmt.Fprintln(os.Stdout, l.Explanation)
+}
 
 // Success represents a lesson succeeded
-func (l *Lesson) Success() {}
+func (t *Tutorial) Success() {
+	fmt.Fprintln(os.Stdout, "Correct!")
+	fmt.Println()
+	t.ActiveLesson = t.Lessons[t.ActiveLessonId+1]
+	t.ActiveLessonId = t.ActiveLessonId + 1
+	t.NextLesson()
+}
 
 // Failure represents a lesson failed
-func (l *Lesson) Failure() {}
+func (t *Tutorial) Failure() {
+	fmt.Fprintln(os.Stdout, "Command was not correct.")
+	fmt.Println()
+}
 
 // Exit quits the lesson
 func (l *Lesson) Exit() {}

@@ -1,7 +1,11 @@
 package tutor
 
 import (
+	"bufio"
+	"bytes"
+	"io"
 	"io/ioutil"
+	"strings"
 	"testing"
 )
 
@@ -11,6 +15,20 @@ const (
 	composeLess = "./docker-compose.json"
 	swarmLess   = "./swarm.json"
 )
+
+func TestPrompt(t *testing.T) {
+	want := "docker run hello-world"
+	reader := bufio.NewReader(strings.NewReader(want))
+
+	got, err := Prompt(reader)
+	if err != io.EOF {
+		t.Errorf("Prompt failed and sent: %s", err)
+	}
+
+	if !bytes.Equal([]byte(got), []byte(want)) {
+		t.Fatalf("Expected %s, got %s instead", want, got)
+	}
+}
 
 func TestNewTutorial(t *testing.T) {
 	tests := []struct {

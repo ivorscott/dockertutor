@@ -4,6 +4,7 @@
     "Title": "LESSON 1.1: TESTING YOUR DOCKER VERSION",
     "Exercise": "Run docker --version to check the version of Docker installed on your machine.",
     "Answer": "docker --version",
+    "Explanation": "",
     "Complete": false,
     "Resources": {
       "Images": [],
@@ -17,6 +18,7 @@
     "Title": "LESSON 1.2: TEST DOCKER INSTALLATION",
     "Exercise": "Test that your installation works by running the hello-world Docker image. Run docker run hello-world.",
     "Answer": "docker run hello-world",
+    "Explanation": "",
     "Complete": false,
     "Resources": {
       "Images": [],

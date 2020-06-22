@@ -1,28 +1,17 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io"
+	"github.com/ivorscott/dockertutor/tutor"
 	"io/ioutil"
 	"log"
-	"os"
-	"os/exec"
-
-	"github.com/ivorscott/dockertutor/tutor"
 )
 
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func prompt(stdin io.Reader) (string, error) {
-	fmt.Print("\n> ")
-	reader := bufio.NewReader(stdin)
-	return reader.ReadString('\n')
 }
 
 func run() error {
@@ -51,18 +40,7 @@ func run() error {
 		t.Welcome()
 	}
 
-	t.ActiveLesson.Teach()
+	t.NextLesson()
 
-	cmd, err := prompt(os.Stdin)
-	if err != nil {
-		return err
-	}
-
-	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("%s", out)
 	return nil
 }
