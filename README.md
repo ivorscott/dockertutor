@@ -25,7 +25,7 @@ dockertutor has 3 tutorials:
 -c stands for category.
 ```
 ./dockertutor  # defaults -c "docker"
-./dockertutor -c docker-compose # WIP, requires file generation and modification
+./dockertutor -c docker-compose
 ./dockertutor -c swarm 
 ```
 
