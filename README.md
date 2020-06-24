@@ -22,10 +22,10 @@ dockertutor has 3 tutorials:
 2) docker compose
 3) swarm
 
--c stands for category. The first command defaults to docker cli
+-c stands for category.
 ```
-./dockertutor  # defaults to the "docker" category
-./dockertutor -c docker-compose # WIP, requires file generation and modification
+./dockertutor  # defaults -c "docker"
+./dockertutor -c docker-compose
 ./dockertutor -c swarm 
 ```
 
