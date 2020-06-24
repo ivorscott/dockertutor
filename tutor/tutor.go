@@ -5,9 +5,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 )
@@ -15,6 +17,7 @@ import (
 // Tutorial manages active tutorial state
 type Tutorial struct {
 	Category       string
+	Directory      string
 	ActiveLessonId int
 	ActiveLesson   Lesson `json:"-"`
 	Tutorials      `json:"-"`
@@ -29,7 +32,7 @@ type Lesson struct {
 	Title       string
 	Exercise    string
 	Answer      string
-	Examples    []string
+	Example     string
 	Explanation string
 	Complete    bool
 	Setup       []string
@@ -76,8 +79,12 @@ func ConfigFiles(category string) (string, string) {
 	return tutsConfig, lessonConfig
 }
 
+func templatePath() string {
+	return `./examples`
+}
+
 // NewTutorial returns a new tutorial by category
-func NewTutorial(tutsData, lessData []byte, category string) (*Tutorial, error) {
+func NewTutorial(tutsData, lessData []byte, category, directory string) (*Tutorial, error) {
 	t := &Tutorials{}
 
 	if err := json.Unmarshal(tutsData, t); err != nil {
@@ -93,13 +100,25 @@ func NewTutorial(tutsData, lessData []byte, category string) (*Tutorial, error) 
 	cat := catMap[category]
 	al := *l
 
-	return &Tutorial{
+	tut := &Tutorial{
 		Category:       category,
+		Directory:      tuts[cat].Directory,
 		ActiveLessonId: tuts[cat].ActiveLessonId,
 		ActiveLesson:   al[tuts[cat].ActiveLessonId],
 		Tutorials:      tuts,
 		Lessons:        *l,
-	}, nil
+	}
+	if directory == "" {
+		if tut.Directory == "" {
+			flag.Usage()
+			os.Exit(1)
+		}
+	} else {
+		tut.Directory = directory
+	}
+
+	tut.save()
+	return tut, nil
 }
 
 // New Lessons provides the lessons state for the tutorial
@@ -128,6 +147,10 @@ func (t *Tutorial) NextLesson() {
 	if cmd := t.ActiveLesson.setup(); cmd != nil {
 		cmd.Start()
 		cmd.Wait()
+	}
+
+	if t.ActiveLesson.Example != "" {
+		t.generateExample()
 	}
 
 	var answer = false
@@ -188,6 +211,32 @@ func (l *Lesson) teardown() *exec.Cmd {
 	return nil
 }
 
+func (t *Tutorial) generateExample() {
+	examplesDir := fmt.Sprintf("%s%s", t.Directory, t.ActiveLesson.Example)
+	if err := os.MkdirAll(examplesDir, 0700); err != nil {
+		log.Fatalf("Failed to create directories: %s", err.Error())
+	}
+
+	templates := fmt.Sprintf("%s%s", templatePath(), t.ActiveLesson.Example)
+	files, _ := ioutil.ReadDir(templates)
+
+	for _, file := range files {
+		sourcePath := fmt.Sprintf("%s/%s",templates, file.Name())
+		inputFile, err := os.Open(sourcePath)
+		if err != nil {
+			log.Fatalf("Failed to open the file:%s", err)
+		}
+
+		destPath := fmt.Sprintf("%s/%s",examplesDir,file.Name())
+		outputFile, err := os.Create(destPath)
+		if err != nil {
+			log.Fatalf("Failed to create the file:%s", err)
+		}
+
+		io.Copy(outputFile, inputFile)
+	}
+}
+
 // Teach returns a lesson exercise
 func (l *Lesson) teach() {
 	fmt.Fprintln(os.Stdout, l.Title)
@@ -234,6 +283,9 @@ func (t *Tutorial) save() {
 	tuts := t.Tutorials
 	cat := catMap[t.Category]
 	tuts[cat].ActiveLessonId = t.ActiveLessonId
+	tuts[catMap["docker"]].Directory = t.Directory
+	tuts[catMap["docker-compose"]].Directory = t.Directory
+	tuts[catMap["swarm"]].Directory = t.Directory
 
 	json, err := json.Marshal(tuts)
 	if err != nil {

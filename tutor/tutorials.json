@@ -1,1 +1,17 @@
-[{"Category":"docker","ActiveLessonId":0},{"Category":"docker-compose","ActiveLessonId":1},{"Category":"swarm","ActiveLessonId":0}]
+[
+  {
+    "Category": "docker",
+    "Directory": "/Users/ivorscott/Code/docker-tutorial",
+    "ActiveLessonId": 0
+  },
+  {
+    "Category": "docker-compose",
+    "Directory": "/Users/ivorscott/Code/docker-tutorial",
+    "ActiveLessonId": 1
+  },
+  {
+    "Category": "swarm",
+    "Directory": "/Users/ivorscott/Code/docker-tutorial",
+    "ActiveLessonId": 0
+  }
+]

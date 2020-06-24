@@ -14,6 +14,7 @@ func main() {
 }
 
 func run() error {
+	dir := flag.String("dir", "", "Working directory (required)")
 	cat := flag.String("c", tutor.Categories[0], "Select tutorial category")
 	flag.Parse()
 
@@ -29,7 +30,7 @@ func run() error {
 		return err
 	}
 
-	t, err := tutor.NewTutorial(tutsData, lessData, *cat)
+	t, err := tutor.NewTutorial(tutsData, lessData, *cat, *dir)
 	if err != nil {
 		return err
 	}
