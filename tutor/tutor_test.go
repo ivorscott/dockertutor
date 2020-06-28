@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	//tutsConf    = "../lessons/tutor_config.json"
 	dockerLess  = "../lessons/docker.json"
 	composeLess = "../lessons/docker-compose.json"
 	swarmLess   = "../lessons/swarm.json"
