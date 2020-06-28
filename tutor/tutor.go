@@ -1,56 +1,32 @@
 // Tutor provides state management for tutorials and their lessons
 package tutor
 
+//go:generate binclude
+
 import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
+	"github.com/lu4p/binclude"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 )
 
 // Tutorial manages active tutorial state
 type Tutorial struct {
-	Category       string
-	Directory      string
-	ActiveLessonId int
-	ActiveLesson   Lesson `json:"-"`
-	Tutorials      `json:"-"`
-	Lessons        `json:"-"`
+	Config            `json:"-"`
+	Category          string
+	ActiveLessonIndex int
+	ActiveLesson      Lesson `json:"-"`
+	Lessons           `json:"-"`
 }
 
-type Tutorials []Tutorial
-
-// Lesson represents the state of an exercise
-type Lesson struct {
-	Id          int
-	Title       string
-	Exercise    string
-	Answer      string
-	Example     string
-	Explanation string
-	Complete    bool
-	Setup       []string
-	Teardown    []string
-	Resources
-}
-
-// Lessons represent the Tutorial lessons
-type Lessons []Lesson
-
-// Resources aim to preserve the state of a lesson in the event of
-// exiting the program and starting back up again. Direct resources
-// and the resources of dependent lessons
-type Resources struct {
-	Images     []string
-	Containers []string
-	Volumes    []string
-	Networks   []string
+type Config struct {
+	Directory string
+	Tutorials []Tutorial
 }
 
 var Categories = [3]string{"docker", "docker-compose", "swarm"}
@@ -67,246 +43,323 @@ var catMap = map[string]int{
 	Categories[2]: 2,
 }
 
+var ConfigFile = "tutor_config.json"
+var CommandNotFoundExitCode = 127
+
+// prompt prompts the user for input and reads standard in
 func prompt(stdin io.Reader) (string, error) {
-	fmt.Print("\n> ")
+	fmt.Print("\n\n> ")
 	reader := bufio.NewReader(stdin)
 	return reader.ReadString('\n')
 }
 
-func ConfigFiles(category string) (string, string) {
-	tutsConfig := "./tutor/tutorials.json"
-	lessonConfig := fmt.Sprintf("./tutor/%s.json", category)
-	return tutsConfig, lessonConfig
+// configFilePath returns the path to the tutor configuration on the user's local filesystem
+func configFilePath(path string) string {
+	return fmt.Sprintf("%s/%s", path, ConfigFile)
 }
 
-func templatePath() string {
-	return `./examples`
-}
-
-// NewTutorial returns a new tutorial by category
-func NewTutorial(tutsData, lessData []byte, category, directory string) (*Tutorial, error) {
-	t := &Tutorials{}
-
-	if err := json.Unmarshal(tutsData, t); err != nil {
-		return nil, err
+// NewConfig creates a new tutor configuration file on the user's local filesystem
+func NewConfig(path string) error {
+	conf := configFilePath(path)
+	data := fmt.Sprintf(`{ "Directory":"%s"}`, path)
+	if err := ioutil.WriteFile(conf, []byte(data), 0700); err != nil {
+		return err
 	}
+	if _, err := fmt.Fprintln(os.Stdout, "directory initialized"); err != nil {
+		return err
+	}
+	return nil
+}
 
-	l, err := NewLessons(lessData)
+// OpenOrCreateConfig opens the tutor configuration if it exists, otherwise it creates it
+func OpenOrCreateConfig(path string) error {
+	f, err := OpenConfig()
+	if err != nil {
+		return NewConfig(path)
+	}
+	defer f.Close()
+
+	if _, err := fmt.Fprintln(os.Stdout, "folder already initialized"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func OpenConfig() (*os.File, error) {
+		var f *os.File
+		var err error
+		conf := ConfigFile
+		ctx := ""
+
+		for tries := 0; tries < 3; tries++ {
+			f, err = func() (*os.File, error) {
+				f, err := os.Open(fmt.Sprintf("%s%s", ctx, conf))
+				if err != nil {
+					defer f.Close()
+					return nil, err
+				}
+				return f, nil
+			}()
+
+			if err == nil {
+				break
+			}
+
+			ctx += "../"
+
+			if tries == 2 {
+				if err != nil {
+					return nil, fmt.Errorf("Configuration missing. Directory is not initialized. \n\n" +
+						"Try running: dockertutor init or dockertutor help\n\n")
+				}
+			}
+		}
+
+		return f, nil
+}
+
+// NewApp returns a new tutor application for category
+func NewTutorial(f *os.File, lessonData []byte, category string) (*Tutorial, error) {
+	conf := &Config{}
+
+	b, err := ioutil.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
 
-	tuts := *t
-	cat := catMap[category]
-	al := *l
-
-	tut := &Tutorial{
-		Category:       category,
-		Directory:      tuts[cat].Directory,
-		ActiveLessonId: tuts[cat].ActiveLessonId,
-		ActiveLesson:   al[tuts[cat].ActiveLessonId],
-		Tutorials:      tuts,
-		Lessons:        *l,
-	}
-	if directory == "" {
-		if tut.Directory == "" {
-			flag.Usage()
-			os.Exit(1)
-		}
-	} else {
-		tut.Directory = directory
-	}
-
-	tut.save()
-	return tut, nil
-}
-
-// New Lessons provides the lessons state for the tutorial
-func NewLessons(lessData []byte) (*Lessons, error) {
-	l := &Lessons{}
-
-	if err := json.Unmarshal(lessData, l); err != nil {
+	if err := json.Unmarshal(b, conf); err != nil {
 		return nil, err
 	}
 
-	return l, nil
+	if len(conf.Tutorials) == 0 {
+		tuts := &[]Tutorial{}
+		tutsData := `[
+			{
+				"Category": "docker",
+				"ActiveLessonIndex": 0
+			},
+			{
+				"Category": "docker-compose",
+				"ActiveLessonIndex": 0
+			},
+			{
+				"Category": "swarm",
+				"ActiveLessonIndex": 0
+			}
+		]`
+		if err := json.Unmarshal([]byte(tutsData), tuts); err != nil {
+			return nil, err
+		}
+		conf.Tutorials = *tuts
+
+		j, err := json.Marshal(conf)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := ioutil.WriteFile(ConfigFile, j, 0644); err != nil {
+			return nil, err
+		}
+	}
+
+	l, err := NewLessons(lessonData)
+	if err != nil {
+		return nil, err
+	}
+
+	cat := catMap[category]
+	lessons := *l
+	lessonIndex := conf.Tutorials[cat].ActiveLessonIndex
+
+	tut := &Tutorial{
+		Config:            *conf,
+		Category:          category,
+		ActiveLessonIndex: lessonIndex,
+		ActiveLesson:      lessons[lessonIndex],
+		Lessons:           lessons,
+	}
+
+	return tut, nil
 }
 
 // Tutorial returns a lesson exercise
-func (t *Tutorial) Welcome() {
-	fmt.Fprintln(os.Stdout, IntroMap[t.Category])
+func (t *Tutorial) Welcome() error {
+	if _, err := fmt.Fprintln(os.Stdout, IntroMap[t.Category]); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Next fetches the next lesson
-func (t *Tutorial) NextLesson() {
+func (t *Tutorial) NextLesson() error {
 	if cmd := t.ActiveLesson.teardown(); cmd != nil {
-		cmd.Start()
-		cmd.Wait()
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+		if err := cmd.Wait(); err != nil {
+			return err
+		}
 	}
 
 	if cmd := t.ActiveLesson.setup(); cmd != nil {
-		cmd.Start()
-		cmd.Wait()
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+		if err := cmd.Wait(); err != nil {
+			return err
+		}
 	}
 
 	if t.ActiveLesson.Example != "" {
-		t.generateExample()
+		if err := t.generateExample(); err != nil {
+			return err
+		}
 	}
 
 	var answer = false
-
 	for answer == false {
-		t.ActiveLesson.teach()
+		if err := t.ActiveLesson.teach(); err != nil {
+			return err
+		}
 
 		cmd, err := prompt(os.Stdin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s", err.Error())
+			return err
 		}
 
 		answer = t.checkAnswer(cmd)
+		command := exec.Command("/bin/sh", "-c", cmd)
 
-		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
+		out, err := command.CombinedOutput()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s", err.Error())
+			if exitError, ok := err.(*exec.ExitError); ok {
+				if exitError.ExitCode() != CommandNotFoundExitCode {
+					return err
+				}
+			}
 		}
 		fmt.Printf("%s", out)
 
 		if answer {
-			t.success()
-			return
-		} else {
-			t.failure()
+			return t.success()
+		}
+		if err := t.failure(); err != nil {
+			return err
 		}
 	}
-
+	return nil
 }
 
-// CheckAnswer splits the command on a newline and checks the answer
+// checkAnswer splits the command on a newline and checks the answer
 func (t *Tutorial) checkAnswer(cmd string) bool {
 	answer := bytes.Split([]byte(cmd), []byte("\n"))
-
 	if bytes.Equal(answer[0], []byte(t.ActiveLesson.Answer)) {
 		return true
 	}
 	return false
 }
 
-// Setup provisions lesson resources
-func (l *Lesson) setup() *exec.Cmd {
-	if len(l.Setup) > 0 {
-		for _, cmd := range l.Setup {
-			return exec.Command("/bin/sh", "-c", cmd)
-		}
-	}
-	return nil
-}
+// generateExample copies a statik example to the user's directory
+func (t *Tutorial) generateExample() error {
+	binclude.Include("../examples")
 
-// Teardown tears down lesson resources
-func (l *Lesson) teardown() *exec.Cmd {
-	if len(l.Teardown) > 0 {
-		for _, cmd := range l.Teardown {
-			return exec.Command("/bin/sh", "-c", cmd)
-		}
-	}
-	return nil
-}
-
-func (t *Tutorial) generateExample() {
-	examplesDir := fmt.Sprintf("%s%s", t.Directory, t.ActiveLesson.Example)
-	if err := os.MkdirAll(examplesDir, 0700); err != nil {
-		log.Fatalf("Failed to create directories: %s", err.Error())
+	// create example folder structure in user's local directory
+	usd := fmt.Sprintf("%s/%s", t.Directory, t.ActiveLesson.Example)
+	if err := os.MkdirAll(usd, 0700); err != nil {
+		return err
 	}
 
-	templates := fmt.Sprintf("%s%s", templatePath(), t.ActiveLesson.Example)
-	files, _ := ioutil.ReadDir(templates)
+	// copy static examples and move them to the user's local directory
+	exd := fmt.Sprintf("%s/%s", "../examples", t.ActiveLesson.Example)
+	files, err := BinFS.ReadDir(exd)
+	if err != nil {
+		return err
+	}
 
 	for _, file := range files {
-		sourcePath := fmt.Sprintf("%s/%s",templates, file.Name())
-		inputFile, err := os.Open(sourcePath)
+		src := fmt.Sprintf("%s/%s", exd, file.Name())
+		inf, err := BinFS.Open(src)
 		if err != nil {
-			log.Fatalf("Failed to open the file:%s", err)
+			return err
 		}
 
-		destPath := fmt.Sprintf("%s/%s",examplesDir,file.Name())
-		outputFile, err := os.Create(destPath)
+		dest := fmt.Sprintf("%s/%s", usd, file.Name())
+		outf, err := os.Create(dest)
 		if err != nil {
-			log.Fatalf("Failed to create the file:%s", err)
+			return err
 		}
 
-		io.Copy(outputFile, inputFile)
+		if _, err := io.Copy(outf, inf); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-// Teach returns a lesson exercise
-func (l *Lesson) teach() {
-	fmt.Fprintln(os.Stdout, l.Title)
-	fmt.Fprintln(os.Stdout, lbreak())
-	fmt.Fprintln(os.Stdout, l.Exercise)
+// failure represents a lesson failed
+func (t *Tutorial) failure() error {
+	if _, err := fmt.Fprint(os.Stdout, "\nCommand was not correct.\n"); err != nil {
+		return err
+	}
+	return nil
 }
 
-// Explain returns a lesson explanation
-func (l *Lesson) explain() {
-	fmt.Fprintln(os.Stdout, l.Explanation)
-}
-
-// Failure represents a lesson failed
-func (t *Tutorial) failure() {
-	fmt.Println()
-	fmt.Fprintln(os.Stdout, "Command was not correct.")
-	fmt.Println()
-}
-
-// Success represents a lesson succeeded
-func (t *Tutorial) success() {
-	fmt.Println()
-	fmt.Fprintln(os.Stdout, "Correct!")
-	fmt.Println()
+// success represents a lesson succeeded
+func (t *Tutorial) success() error {
+	if _, err := fmt.Fprint(os.Stdout, "\nCorrect!\n"); err != nil {
+		return err
+	}
 
 	lessLen := len(t.Lessons)
-
-	if t.ActiveLessonId == lessLen-1 {
-		t.reset()
+	if t.ActiveLessonIndex == lessLen-1 {
+		if err := t.reset(); err != nil {
+			return err
+		}
 		cat := catMap[t.Category]
-		capitalize := bytes.Title([]byte(Categories[cat]))
-		msg := fmt.Sprintf("%s Tutorial Complete!", capitalize)
-		fmt.Fprintln(os.Stdout, msg)
-		return
+		category := bytes.Title([]byte(Categories[cat]))
+		msg := "Tutorial Complete!"
+		if _, err := fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s", category, msg)); err != nil {
+			return err
+		}
+		return nil
 	}
-	t.ActiveLesson = t.Lessons[t.ActiveLessonId+1]
-	t.ActiveLessonId = t.ActiveLessonId + 1
-	t.save()
-	// Write to Tutorial Json
-	t.NextLesson()
+
+	t.ActiveLesson = t.Lessons[t.ActiveLessonIndex+1]
+	t.ActiveLessonIndex = t.ActiveLessonIndex + 1
+	if err := t.save(); err != nil {
+		return err
+	}
+	return t.NextLesson()
 }
 
-func (t *Tutorial) save() {
-	tuts := t.Tutorials
+// reset resources and lesson progress
+func (t *Tutorial) reset() error {
 	cat := catMap[t.Category]
-	tuts[cat].ActiveLessonId = t.ActiveLessonId
-	tuts[catMap["docker"]].Directory = t.Directory
-	tuts[catMap["docker-compose"]].Directory = t.Directory
-	tuts[catMap["swarm"]].Directory = t.Directory
+	t.Config.Tutorials[cat].ActiveLessonIndex = 0
 
-	json, err := json.Marshal(tuts)
+	j, err := json.Marshal(t.Config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
+		return err
 	}
 
-	tutsConfig, _ := ConfigFiles(t.Category)
-	ioutil.WriteFile(tutsConfig, json, 0644)
+	if err := ioutil.WriteFile(configFilePath(t.Config.Directory), j, 0644); err != nil {
+		return err
+	}
+	return nil
 }
 
-// Reset resources and lesson progress
-func (t *Tutorial) reset() {
-	tuts := t.Tutorials
+// save updates persistent storage configuration
+func (t *Tutorial) save() error {
 	cat := catMap[t.Category]
-	tuts[cat].ActiveLessonId = 0
+	t.Config.Tutorials[cat].ActiveLessonIndex = t.ActiveLessonIndex
 
-	json, err := json.Marshal(tuts)
+	j, err := json.Marshal(t.Config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
+		return err
 	}
 
-	tutsConfig, _ := ConfigFiles(t.Category)
-	ioutil.WriteFile(tutsConfig, json, 0644)
+	if err := ioutil.WriteFile(configFilePath(t.Config.Directory), j, 0644); err != nil {
+		return nil
+	}
+	return nil
 }
