@@ -15,18 +15,21 @@ docker run -v $(pwd):/go/src -p 8080:8080 ivorsco77/godocs
 ```
 Then navigate to http://localhost:8080/pkg/tutor/
 
-### Demo
+### Usage
 dockertutor has 3 tutorials:
 
 1) docker
-2) docker compose
+2) docker-compose
 3) swarm
 
--c stands for category.
+First initialize your workspace then switch between tutorials with `--category` or `-c`
+
 ```
-./dockertutor  # defaults -c "docker"
-./dockertutor -c docker-compose
-./dockertutor -c swarm 
+go build
+go install
+
+dockertutor init
+dockertutor -c docker
 ```
 
 ### Tests 
