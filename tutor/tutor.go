@@ -8,11 +8,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lu4p/binclude"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+	"github.com/lu4p/binclude"
 )
 
 // Tutorial manages active tutorial state
@@ -24,6 +25,8 @@ type Tutorial struct {
 	Lessons           `json:"-"`
 }
 
+// Config stores application Tutorials and the initialized practice directory.
+// Config is used to retrieve persisted data found in tutor_config.json.
 type Config struct {
 	Directory string
 	Tutorials []Tutorial
@@ -85,37 +88,41 @@ func OpenOrCreateConfig(path string) error {
 	return nil
 }
 
+// OpenConfig opens the tutor configuration by checking in 3 places:
+// the current directory, if not found it checks the parent directory, if not
+// found it checks the grandparent directory before exiting with an error.
+// If it find the configuration the file is returned to the caller.
 func OpenConfig() (*os.File, error) {
-		var f *os.File
-		var err error
-		conf := ConfigFile
-		ctx := ""
+	var f *os.File
+	var err error
+	conf := ConfigFile
+	ctx := ""
 
-		for tries := 0; tries < 3; tries++ {
-			f, err = func() (*os.File, error) {
-				f, err := os.Open(fmt.Sprintf("%s%s", ctx, conf))
-				if err != nil {
-					defer f.Close()
-					return nil, err
-				}
-				return f, nil
-			}()
-
-			if err == nil {
-				break
+	for tries := 0; tries < 3; tries++ {
+		f, err = func() (*os.File, error) {
+			f, err := os.Open(fmt.Sprintf("%s%s", ctx, conf))
+			if err != nil {
+				defer f.Close()
+				return nil, err
 			}
+			return f, nil
+		}()
 
-			ctx += "../"
-
-			if tries == 2 {
-				if err != nil {
-					return nil, fmt.Errorf("Configuration missing. Directory is not initialized. \n\n" +
-						"Try running: dockertutor init or dockertutor help\n\n")
-				}
-			}
+		if err == nil {
+			break
 		}
 
-		return f, nil
+		ctx += "../"
+
+		if tries == 2 {
+			if err != nil {
+				return nil, fmt.Errorf("Configuration missing. Directory is not initialized. \n\n" +
+					"Try running: dockertutor init or dockertutor help\n\n")
+			}
+		}
+	}
+
+	return f, nil
 }
 
 // NewApp returns a new tutor application for category
