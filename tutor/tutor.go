@@ -90,7 +90,8 @@ func OpenOrCreateConfig(path string) error {
 
 // OpenConfig opens the tutor configuration by checking in 3 places:
 // the current directory, the parent directory and the grandparent directory.
-// If not found in one location it function moves up a directory.
+// If not found in one location it moves up a directory. The allows a user to
+// use the program in a lesson folder within an initialized directory.
 func OpenConfig() (*os.File, error) {
 	var f *os.File
 	var err error
