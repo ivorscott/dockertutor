@@ -89,9 +89,8 @@ func OpenOrCreateConfig(path string) error {
 }
 
 // OpenConfig opens the tutor configuration by checking in 3 places:
-// the current directory, if not found it checks the parent directory, if not
-// found it checks the grandparent directory before exiting with an error.
-// If it find the configuration the file is returned to the caller.
+// the current directory, the parent directory and the grandparent directory.
+// If not found in one location it function moves up a directory.
 func OpenConfig() (*os.File, error) {
 	var f *os.File
 	var err error
