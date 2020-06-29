@@ -8,16 +8,6 @@ Beginners need tutorials for docker. To get one from docker currently they need 
 
 [GITHUB ISSUE](https://github.com/docker/roadmap/issues/102)
 
-### Go Docs
-
-Run the following command in the project root.
-
-```
-docker run -v $(pwd):/go/src -p 8080:8080 ivorsco77/godocs
-```
-
-Then navigate to http://localhost:8080/pkg/tutor/
-
 ### Usage
 
 dockertutor has 3 tutorials:
