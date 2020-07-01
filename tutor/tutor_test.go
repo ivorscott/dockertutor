@@ -47,6 +47,7 @@ func TestNewTutorial(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer config.Close()
 
 	c, err := ioutil.ReadAll(config)
 	if err != nil {
