@@ -1,0 +1,20 @@
+[
+  {
+    "Title": "LESSON 1.1: ENABLE SWARM MODE",
+    "Exercise": "Run docker swarm init to enable Docker swarm mode on your machine.",
+    "Answer": "docker swarm init",
+    "Explanation": "",
+    "Complete": false,
+    "Setup": [],
+    "Teardown": ["docker swarm leave --force"]
+  },
+  {
+    "Title": "LESSON 1.2: LIST THE NODES IN YOUR CLUSTER",
+    "Exercise": "Currently, you have a single node swarm cluster. List the nodes in your swarm. Run docker node ls",
+    "Answer": "docker node ls",
+    "Explanation": "",
+    "Complete": false,
+    "Setup": ["docker swarm init"],
+    "Teardown": ["docker swarm leave --force"]
+  }
+]

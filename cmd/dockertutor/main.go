@@ -72,6 +72,11 @@ func run() error {
 			}
 			defer f.Close()
 
+			config, err := ioutil.ReadAll(f)
+			if err != nil {
+				return err
+			}
+
 			cFile := fmt.Sprintf("../../lessons/%s.json", c.String("category"))
 			bf, err := BinFS.Open(cFile)
 			if err != nil {
@@ -84,7 +89,7 @@ func run() error {
 				return err
 			}
 
-			t, err := tutor.NewTutorial(f, lessons, c.String("category"))
+			t, err := tutor.NewTutorial(config, lessons, c.String("category"))
 			if err != nil {
 				return err
 			}

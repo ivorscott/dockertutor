@@ -24,29 +24,45 @@ type Lessons []Lesson
 // New Lessons provides the lessons state for the tutorial
 func NewLessons(lessData []byte) (*Lessons, error) {
 	l := &Lessons{}
-
 	if err := json.Unmarshal(lessData, l); err != nil {
 		return nil, err
 	}
-
 	return l, nil
 }
 
 // Setup provisions lesson resources
-func (l *Lesson) setup() *exec.Cmd {
+func (l *Lesson) setup() error {
 	if len(l.Setup) > 0 {
 		for _, cmd := range l.Setup {
-			return exec.Command("/bin/sh", "-c", cmd)
+			c := exec.Command("/bin/sh", "-c", cmd)
+			if c != nil {
+				err := c.Start()
+				if err != nil {
+					return err
+				}
+				err = c.Wait()
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil
 }
 
 // Teardown tears down lesson resources
-func (l *Lesson) teardown() *exec.Cmd {
+func (l *Lesson) teardown() error {
 	if len(l.Teardown) > 0 {
 		for _, cmd := range l.Teardown {
-			return exec.Command("/bin/sh", "-c", cmd)
+			c := exec.Command("/bin/sh", "-c", cmd)
+			if c != nil {
+				err := c.Start()
+				if err != nil {
+					return err
+				}
+				c.Wait()
+				// ignoring teardown errors
+			}
 		}
 	}
 	return nil
@@ -54,7 +70,7 @@ func (l *Lesson) teardown() *exec.Cmd {
 
 // Teach returns a lesson exercise
 func (l *Lesson) teach() error {
-	if _, err := fmt.Fprintf(os.Stdout, "\n%s\n%s\n%s",l.Title, lbreak(), l.Exercise); err != nil {
+	if _, err := fmt.Fprintf(os.Stdout, "\n%s\n%s\n%s", l.Title, lbreak(), l.Exercise); err != nil {
 		return err
 	}
 	return nil
@@ -62,7 +78,7 @@ func (l *Lesson) teach() error {
 
 // Explain returns a lesson explanation
 func (l *Lesson) explain() error {
-	if _, err := fmt.Fprintln(os.Stdout, l.Explanation); err !=nil {
+	if _, err := fmt.Fprintln(os.Stdout, l.Explanation); err != nil {
 		return err
 	}
 	return nil

@@ -126,15 +126,11 @@ func OpenConfig() (*os.File, error) {
 }
 
 // NewApp returns a new tutor application for category
-func NewTutorial(f *os.File, lessonData []byte, category string) (*Tutorial, error) {
+func NewTutorial(config, lessonData []byte, category string) (*Tutorial, error) {
 	conf := &Config{}
 
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
+	if err := json.Unmarshal(config, conf); err != nil {
 
-	if err := json.Unmarshal(b, conf); err != nil {
 		return nil, err
 	}
 
@@ -199,22 +195,12 @@ func (t *Tutorial) Welcome() error {
 
 // Next fetches the next lesson
 func (t *Tutorial) NextLesson() error {
-	if cmd := t.ActiveLesson.teardown(); cmd != nil {
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-		if err := cmd.Wait(); err != nil {
-			return err
-		}
+	if err := t.ActiveLesson.teardown(); err != nil {
+		return err
 	}
 
-	if cmd := t.ActiveLesson.setup(); cmd != nil {
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-		if err := cmd.Wait(); err != nil {
-			return err
-		}
+	if err := t.ActiveLesson.setup(); err != nil {
+		return err
 	}
 
 	if t.ActiveLesson.Example != "" {
